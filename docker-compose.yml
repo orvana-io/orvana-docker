@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  orvana:
+    image: ghcr.io/orvana-io/orvana:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://orvana:${POSTGRES_PASSWORD}@postgres:5432/orvana
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      ORVANA_DOMAIN: ${ORVANA_DOMAIN}
+      ORVANA_LICENSE_KEY: ${ORVANA_LICENSE_KEY:-}
+      NODE_ENV: production
+    volumes:
+      - orvana_media:/app/media
+      - orvana_logs:/app/logs
+    ports:
+      - "3000:3000"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: orvana
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: orvana
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orvana"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ORVANA_DOMAIN: ${ORVANA_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - orvana
+
+volumes:
+  orvana_media:
+  orvana_logs:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
