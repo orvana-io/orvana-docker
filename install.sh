@@ -47,18 +47,21 @@ cd "$ORVANA_DIR"
 if [ ! -f .env ]; then
   cp .env.example .env
 
-  # Generate secure passwords
-  PG_PASS=$(openssl rand -base64 32)
-  REDIS_PASS=$(openssl rand -base64 32)
-  sed -i "s/change-me-to-something-secure/$PG_PASS/" .env
-  # Set redis password separately
-  sed -i "s/REDIS_PASSWORD=.*/REDIS_PASSWORD=$REDIS_PASS/" .env
+  # Generate secure passwords (use printf to avoid newlines, tr to strip base64 padding issues)
+  PG_PASS=$(openssl rand -hex 32)
+  REDIS_PASS=$(openssl rand -hex 32)
+
+  # Use | as delimiter to avoid issues with / in base64 passwords
+  sed -i "s|POSTGRES_PASSWORD=change-me-to-something-secure|POSTGRES_PASSWORD=${PG_PASS}|" .env
+  sed -i "s|REDIS_PASSWORD=change-me-to-something-secure|REDIS_PASSWORD=${REDIS_PASS}|" .env
 
   echo ""
-  echo "Created .env file. Please set your domain:"
+  echo "✓ Created .env with secure passwords."
+  echo ""
+  echo "Next step — set your domain in $ORVANA_DIR/.env:"
   echo "  ORVANA_DOMAIN=your-station.example.com"
   echo ""
-  echo "Edit $ORVANA_DIR/.env then run:"
+  echo "Then start Orvana:"
   echo "  cd $ORVANA_DIR && docker compose up -d"
   echo ""
 else
@@ -67,7 +70,8 @@ else
   docker compose pull
   docker compose up -d
   echo ""
-  echo "Orvana is running."
-  echo "Open https://$(grep ORVANA_DOMAIN .env | cut -d= -f2) in your browser."
+  echo "✓ Orvana is running."
+  DOMAIN=$(grep '^ORVANA_DOMAIN=' .env | cut -d= -f2)
+  echo "  Open https://${DOMAIN} in your browser."
   echo ""
 fi
