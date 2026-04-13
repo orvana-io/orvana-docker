@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   orvana:
     image: ghcr.io/orvana-io/orvana:latest
@@ -12,6 +10,7 @@ services:
     environment:
       DATABASE_URL: postgres://orvana:${POSTGRES_PASSWORD}@postgres:5432/orvana
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
       ORVANA_DOMAIN: ${ORVANA_DOMAIN}
       ORVANA_LICENSE_KEY: ${ORVANA_LICENSE_KEY:-}
       NODE_ENV: production
