@@ -18,9 +18,11 @@ export default {
       return new Response('ok', { status: 200 });
     }
 
-    // Fetch install script from GitHub
-    const response = await fetch(INSTALL_SCRIPT_URL, {
-      cf: { cacheEverything: false },
+    // Add timestamp cache buster to bypass GitHub CDN cache
+    const bustUrl = `${INSTALL_SCRIPT_URL}?t=${Date.now()}`;
+
+    const response = await fetch(bustUrl, {
+      cf: { cacheEverything: false, cacheTtl: 0 },
     });
 
     if (!response.ok) {
