@@ -1,7 +1,3 @@
-{ORVANA_DOMAIN} {
-    reverse_proxy orvana:3000
-    encode gzip
-    tls {
-        protocols tls1.2 tls1.3
-    }
+{$ORVANA_DOMAIN} {
+	reverse_proxy orvana:3000
 }
